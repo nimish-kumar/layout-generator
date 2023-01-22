@@ -64,7 +64,21 @@ export const getSeats = (seatsString: string) => {
   return seatsString.split(':');
 };
 
-// ["F:BB000:BB0+0:BB0+0:4D&F99+16:4D&F98+15:BB0+0:BB0+0|", ...]
+// ["F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|", ...]
 export const getRows = (rowsString: string) => {
   return rowsString.split('|').map((row) => `${row}|`);
 };
+
+export const getGroups = (layoutString: string) => {
+  return layoutString.split('||');
+};
+
+export const seatGenerator = (
+  statusCode: number,
+  groupCode: string,
+  row: string,
+  col: number,
+  seatNumber: number,
+) => `${statusCode}${groupCode}&${row}${col}+${seatNumber}`;
+
+export const aisleGenerator = (grpCode: string) => `${grpCode}0+0`;
