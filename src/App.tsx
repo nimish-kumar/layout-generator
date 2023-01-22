@@ -11,7 +11,7 @@ function App() {
       <LayoutGenerator />
       <Row justify='center'>
         <Col>
-          <Layout />
+          <Layout fromIndex={10} toIndex={5} />
         </Col>
       </Row>
     </div>

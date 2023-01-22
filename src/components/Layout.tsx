@@ -1,8 +1,15 @@
 import { Col, Divider, Row, Typography } from 'antd';
 import React from 'react';
+import { generateRowGroupName } from '../utils';
 
 type BoxType = 'aisle' | 'seat';
-type SeatStatus = 'sold' | 'available' | 'selected';
+
+export const SeatStatusCode = {
+  sold: 0,
+  available: 1,
+  selected: 2,
+} as const;
+type SeatStatus = keyof typeof SeatStatusCode;
 
 interface IExtensibleBoxProps<T extends BoxType> {
   type: T;
@@ -58,7 +65,6 @@ const Box = (props: BoxProps) => {
     if (isSeat(param)) {
       if (param.type === 'seat') {
         if (param.status === 'available') {
-          console.log('AVAILABLE :>> ');
           return availableSeatStyle;
         }
         if (param.status === 'selected') {
@@ -73,7 +79,6 @@ const Box = (props: BoxProps) => {
       return {};
     }
   };
-  console.log('combine styles', seatStyle(props));
   return (
     <div
       style={combineStyles([
@@ -92,8 +97,48 @@ const Box = (props: BoxProps) => {
   );
 };
 
-export default function Layout() {
+interface IProps {
+  fromIndex: number;
+  toIndex: number;
+}
+
+export default function Layout({ fromIndex, toIndex }: IProps) {
   const { Text } = Typography;
+
+  const rowGenerator = (fromIndex: number, toIndex: number) => {
+    const rows = [];
+    for (let i = fromIndex; i >= toIndex; i--) {
+      rows.push(
+        <Row gutter={[9, 9]} key={i} align='middle'>
+          <Text
+            type='secondary'
+            style={{
+              fontSize: '1rem',
+              marginTop: '0.5rem',
+              height: '1.5625rem',
+              width: '1.5625rem',
+            }}
+          >
+            {generateRowGroupName(i)}
+          </Text>
+          {Array.from({ length: 3 }, (_, index) => (
+            <Box type='aisle' key={index} />
+          ))}
+          {Array.from({ length: 30 }, (_, index) => (
+            <Col key={index}>
+              <Box
+                type='seat'
+                onClick={() => console.log('Hello there')}
+                status='available'
+                seatNumber={`${index + 1}`}
+              />
+            </Col>
+          )).reverse()}
+        </Row>,
+      );
+    }
+    return rows;
+  };
   return (
     <Row style={{ marginBottom: '1.25rem' }}>
       <Text type='secondary' style={{ alignSelf: 'flex-start' }}>
@@ -101,29 +146,7 @@ export default function Layout() {
       </Text>
       <Divider style={{ marginTop: '.625rem', marginBottom: '.3125rem' }} />
       <Row>
-        <Col>
-          {Array.from({ length: 5 }, (_, outerIndex) => (
-            <Row gutter={[9, 9]} key={outerIndex} align='middle'>
-              <Text type='secondary' style={{ fontSize: '1rem', marginTop: '0.5rem' }}>
-                P
-              </Text>
-              {Array.from({ length: 3 }, (_, index) => (
-                <Box type='aisle' key={index} />
-              ))}
-
-              {Array.from({ length: 30 }, (_, index) => (
-                <Col key={index}>
-                  <Box
-                    type='seat'
-                    onClick={() => console.log('Hello there')}
-                    status='available'
-                    seatNumber={`${index + 1}`}
-                  />
-                </Col>
-              )).reverse()}
-            </Row>
-          ))}
-        </Col>
+        <Col>{rowGenerator(fromIndex, toIndex)}</Col>
       </Row>
     </Row>
   );

@@ -15,30 +15,7 @@ export default function LayoutGeneratorForm() {
   const initialFormValue = {
     groups: [],
   };
-  const generateRowGroupName = (code: number): string => {
-    let grpName = '';
-    if (code == 0) {
-      return 'A';
-    }
-    while (code > 0) {
-      let r = 0;
-      r = code % 26;
-      grpName = grpName + String.fromCharCode(r + 65);
-      // console.log('GRP NAME', grpName);
-      code = (code / 26) >> 0;
-    }
-    return grpName.split('').reverse().join('');
-  };
-  const getIndex = (grpName: string) => {
-    const reverseGrpName = grpName.split('').reverse().join('');
-    const l = reverseGrpName.length;
-    let sum = 0;
-    for (let i = 0; i < l; i++) {
-      sum = sum + (reverseGrpName.charCodeAt(i) - 65) * Math.pow(26, i);
-    }
-    return sum;
-  };
-
+ 
   const submitBtnHandler = (values: any) => {
     console.log('values :>> ', values);
   };
