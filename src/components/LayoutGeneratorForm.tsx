@@ -33,13 +33,6 @@ export default function LayoutGeneratorForm() {
           form={form}
           onFinish={submitBtnHandler}
         >
-          {/* <Col>
-            <Space>
-              <Form.Item>
-              <Title level={5}>{`Rows`}</Title>
-              </Form.Item>
-            </Space>
-          </Col> */}
           <Col>
             <Form.List name='groups'>
               {(fields, { add, remove }) => (
