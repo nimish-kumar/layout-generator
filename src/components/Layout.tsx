@@ -1,9 +1,9 @@
 import { Col, Divider, Row, Typography } from 'antd';
-import React from 'react';
-import { generateRowGroupName } from '../utils';
+import React, { useEffect, useState } from 'react';
+import { generateRowGroupName, getImmediateSeat, getSeatNumber, getUpdatedRow } from '../utils';
 
 type BoxType = 'aisle' | 'seat';
-
+type LayoutModes = 'creation' | 'selection';
 export const SeatStatusCode = {
   sold: 0,
   available: 1,
@@ -13,15 +13,16 @@ type SeatStatus = keyof typeof SeatStatusCode;
 
 interface IExtensibleBoxProps<T extends BoxType> {
   type: T;
+  mode: LayoutModes;
 }
 
 interface IBlankBoxProps {
-  onClick?: null;
+  onClick?: () => void;
 }
 interface ISeatProps {
   seatNumber: string;
   status: SeatStatus;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
 }
 
 type IExtendedBlankBoxProps = IExtensibleBoxProps<'aisle'> & IBlankBoxProps;
@@ -45,6 +46,12 @@ function isSeat(param: styleParams) {
   }
   return false;
 }
+function isSelectionModeActive(param: styleParams) {
+  if (param.mode === 'selection') {
+    return true;
+  }
+  return false;
+}
 const Box = (props: BoxProps) => {
   const availableSeatStyle: React.CSSProperties = {
     backgroundColor: '#FFFFFF',
@@ -60,25 +67,60 @@ const Box = (props: BoxProps) => {
     color: '#FFF',
     fontSize: '0.625rem',
   };
-
+  const creationModeAisleStyle: React.CSSProperties = {
+    backgroundColor: '#DC3558',
+    color: '#FFF',
+    fontSize: '0.625rem',
+  };
+  const creationModeSeatStyle: React.CSSProperties = {
+    backgroundColor: '#1EA38C',
+    color: '#FFF',
+    fontSize: '0.625rem',
+    fontWeight: 'bold',
+  };
   const seatStyle = (param: styleParams) => {
-    if (isSeat(param)) {
-      if (param.type === 'seat') {
-        if (param.status === 'available') {
-          return availableSeatStyle;
+    if (isSelectionModeActive(param)) {
+      if (isSeat(param)) {
+        if (param.type === 'seat') {
+          if (param.status === 'available') {
+            return availableSeatStyle;
+          }
+          if (param.status === 'selected') {
+            return selectedSeatStyle;
+          }
+          if (param.status === 'sold') {
+            return soldSeatStyle;
+          }
         }
-        if (param.status === 'selected') {
-          return selectedSeatStyle;
-        }
-        if (param.status === 'sold') {
-          return soldSeatStyle;
-        }
+        return {};
       }
       return {};
     } else {
-      return {};
+      if (isSeat(param)) {
+        return creationModeSeatStyle;
+      }
+      return creationModeAisleStyle;
     }
   };
+  if (props.type === 'aisle') {
+    return (
+      <div
+        style={combineStyles([
+          {
+            height: '1.5625rem',
+            width: '1.5625rem',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+          seatStyle(props),
+        ])}
+        onClick={props.onClick}
+      >
+        {' '}
+      </div>
+    );
+  }
   return (
     <div
       style={combineStyles([
@@ -91,8 +133,9 @@ const Box = (props: BoxProps) => {
         },
         seatStyle(props),
       ])}
+      onClick={props.onClick}
     >
-      {`${props.type === 'aisle' ? '' : props.seatNumber}`}
+      {props.seatNumber}
     </div>
   );
 };
@@ -101,6 +144,101 @@ interface IProps {
   fromIndex: number;
   toIndex: number;
 }
+
+const SeatRow = ({
+  rowIndex,
+  maxSeats,
+  grpIndex,
+  grpName,
+  gapCount = 2,
+  reverse = false,
+}: {
+  rowIndex: number;
+  maxSeats: number;
+  grpIndex: number;
+  grpName: string;
+  gapCount?: number;
+  reverse?: boolean;
+}) => {
+  const seatsNumber = Math.floor(maxSeats);
+  const { Text } = Typography;
+  let seatsArray = Array(seatsNumber)
+    .fill('seat')
+    .map((v, i) => `${i + 1}-${v}`);
+
+  const initialAisleGap = Array(Math.floor(gapCount)).fill('aisle');
+  if (reverse) {
+    seatsArray = seatsArray.reverse();
+  }
+  const initialRowArray = [...initialAisleGap, ...seatsArray];
+  const [row, setRow] = useState<string[]>(initialRowArray);
+
+  useEffect(() => {
+    console.log('Updated row------>   ', row);
+  }, [row]);
+  return (
+    <Row gutter={[9, 9]} align='middle'>
+      <Text
+        type='secondary'
+        style={{
+          fontSize: '0.8rem',
+          marginTop: '0.5rem',
+          height: '1.7rem',
+          width: '1.7rem',
+        }}
+      >
+        {generateRowGroupName(rowIndex)}
+      </Text>
+
+      {row.map((e, index) => {
+        if (e === 'aisle') {
+          return (
+            <>
+              <Col key={index}>
+                <Box
+                  mode='creation'
+                  type='aisle'
+                  onClick={() => {
+                    const immediateIndex = getImmediateSeat(row, index);
+                    console.log('Immediate seat idx', immediateIndex);
+                    return index + 1 > gapCount
+                      ? setRow([
+                          ...row.slice(0, index),
+                          `${immediateIndex + 1}-seat`,
+                          ...row.slice(index + 1),
+                        ])
+                      : null;
+                  }}
+                />
+              </Col>
+              {index + 1 === gapCount ? <Divider type='vertical' /> : null}
+            </>
+          );
+        } else {
+          return (
+            <Col key={index}>
+              <Box
+                mode='creation'
+                type='seat'
+                onClick={() => {
+                  console.log('Clicked on', row[index]);
+                  const shiftedRows = getUpdatedRow(
+                    [...row.slice(gapCount)],
+                    index - gapCount,
+                    reverse,
+                  );
+                  setRow([...initialAisleGap, ...shiftedRows]);
+                }}
+                status='available'
+                seatNumber={`${getSeatNumber(row[index])}`}
+              />
+            </Col>
+          );
+        }
+      })}
+    </Row>
+  );
+};
 
 export default function Layout({ fromIndex, toIndex }: IProps) {
   const { Text } = Typography;
@@ -113,20 +251,24 @@ export default function Layout({ fromIndex, toIndex }: IProps) {
           <Text
             type='secondary'
             style={{
-              fontSize: '1rem',
+              fontSize: '0.8rem',
               marginTop: '0.5rem',
-              height: '1.5625rem',
-              width: '1.5625rem',
+              height: '1.7rem',
+              width: '1.7rem',
             }}
           >
             {generateRowGroupName(i)}
           </Text>
-          {Array.from({ length: 3 }, (_, index) => (
-            <Box type='aisle' key={index} />
+
+          {Array.from({ length: 2 }, (_, index) => (
+            <Col key={index}>
+              <Box mode='creation' type='aisle' />
+            </Col>
           ))}
           {Array.from({ length: 30 }, (_, index) => (
             <Col key={index}>
               <Box
+                mode='creation'
                 type='seat'
                 onClick={() => console.log('Hello there')}
                 status='available'
@@ -145,8 +287,13 @@ export default function Layout({ fromIndex, toIndex }: IProps) {
         Row A
       </Text>
       <Divider style={{ marginTop: '.625rem', marginBottom: '.3125rem' }} />
-      <Row>
-        <Col>{rowGenerator(fromIndex, toIndex)}</Col>
+      <Row justify='center' align='middle' style={{ padding: '0.5rem' }}>
+        <Col>
+          <SeatRow gapCount={2} maxSeats={30} grpName='B' grpIndex={30} rowIndex={12} />
+          {/* <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} />
+          <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} />
+          <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} /> */}
+        </Col>
       </Row>
     </Row>
   );
