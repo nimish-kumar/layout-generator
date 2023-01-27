@@ -1,6 +1,13 @@
 import { Col, Divider, Row, Typography } from 'antd';
-import React, { useEffect, useState } from 'react';
-import { generateRowGroupName, getImmediateSeat, getSeatNumber, getUpdatedRow } from '../utils';
+import React, { PropsWithChildren, useState } from 'react';
+import {
+  generateRowGroupName,
+  getImmediateSeat,
+  getRows,
+  getSeatNumber,
+  getUpdatedRow,
+  hasRowStarted,
+} from '../utils';
 
 type BoxType = 'aisle' | 'seat';
 type LayoutModes = 'creation' | 'selection';
@@ -112,6 +119,7 @@ const Box = (props: BoxProps) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            cursor: props.onClick ? 'pointer' : 'default',
           },
           seatStyle(props),
         ])}
@@ -130,6 +138,7 @@ const Box = (props: BoxProps) => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          cursor: 'pointer',
         },
         seatStyle(props),
       ])}
@@ -144,19 +153,34 @@ interface IProps {
   fromIndex: number;
   toIndex: number;
 }
+interface ISeatRowHeaderProps {
+  grpName: string;
+}
+const SeatRowHeader: React.FC<PropsWithChildren<ISeatRowHeaderProps>> = ({ grpName, children }) => {
+  const { Text } = Typography;
+  return (
+    <Row>
+      <Col>
+        <Row justify='start'>
+          <Text type='secondary'>{grpName}</Text>
+          <Divider style={{ margin: '0.5rem 0' }} />
+        </Row>
+        {children}
+      </Col>
+    </Row>
+  );
+};
 
 const SeatRow = ({
-  rowIndex,
+  rowHead,
   maxSeats,
-  grpIndex,
-  grpName,
+  grpRowIndex,
   gapCount = 2,
   reverse = false,
 }: {
-  rowIndex: number;
+  rowHead: string;
   maxSeats: number;
-  grpIndex: number;
-  grpName: string;
+  grpRowIndex: number;
   gapCount?: number;
   reverse?: boolean;
 }) => {
@@ -172,46 +196,41 @@ const SeatRow = ({
   }
   const initialRowArray = [...initialAisleGap, ...seatsArray];
   const [row, setRow] = useState<string[]>(initialRowArray);
-
-  useEffect(() => {
-    console.log('Updated row------>   ', row);
-  }, [row]);
+  const shiftAndUpdateRows = (index: number) => {
+    const shiftedRows = getUpdatedRow([...row.slice(gapCount)], index - gapCount, reverse);
+    setRow([...initialAisleGap, ...shiftedRows]);
+  };
+  const rowString = 'BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15'.split(':');
+  console.log('Row string --> ', rowString);
   return (
-    <Row gutter={[9, 9]} align='middle'>
+    <Row gutter={[9, 0]} align='middle' style={{ marginTop: '0.5rem' }}>
       <Text
         type='secondary'
         style={{
           fontSize: '0.8rem',
-          marginTop: '0.5rem',
           height: '1.7rem',
-          width: '1.7rem',
+          width: '3rem',
+          marginRight: '1rem',
         }}
       >
-        {generateRowGroupName(rowIndex)}
+        {rowHead}
       </Text>
-
       {row.map((e, index) => {
         if (e === 'aisle') {
           return (
             <>
-              <Col key={index}>
+              <Col>
                 <Box
                   mode='creation'
                   type='aisle'
-                  onClick={() => {
-                    const immediateIndex = getImmediateSeat(row, index);
-                    console.log('Immediate seat idx', immediateIndex);
-                    return index + 1 > gapCount
-                      ? setRow([
-                          ...row.slice(0, index),
-                          `${immediateIndex + 1}-seat`,
-                          ...row.slice(index + 1),
-                        ])
-                      : null;
-                  }}
+                  onClick={() => (index >= gapCount ? shiftAndUpdateRows(index) : null)}
                 />
               </Col>
-              {index + 1 === gapCount ? <Divider type='vertical' /> : null}
+              {index + 1 === gapCount ? (
+                <Col>
+                  <Divider style={{ border: '0.025px solid grey' }} type='vertical' />
+                </Col>
+              ) : null}
             </>
           );
         } else {
@@ -220,15 +239,7 @@ const SeatRow = ({
               <Box
                 mode='creation'
                 type='seat'
-                onClick={() => {
-                  console.log('Clicked on', row[index]);
-                  const shiftedRows = getUpdatedRow(
-                    [...row.slice(gapCount)],
-                    index - gapCount,
-                    reverse,
-                  );
-                  setRow([...initialAisleGap, ...shiftedRows]);
-                }}
+                onClick={() => shiftAndUpdateRows(index)}
                 status='available'
                 seatNumber={`${getSeatNumber(row[index])}`}
               />
@@ -241,60 +252,16 @@ const SeatRow = ({
 };
 
 export default function Layout({ fromIndex, toIndex }: IProps) {
-  const { Text } = Typography;
-
-  const rowGenerator = (fromIndex: number, toIndex: number) => {
-    const rows = [];
-    for (let i = fromIndex; i >= toIndex; i--) {
-      rows.push(
-        <Row gutter={[9, 9]} key={i} align='middle'>
-          <Text
-            type='secondary'
-            style={{
-              fontSize: '0.8rem',
-              marginTop: '0.5rem',
-              height: '1.7rem',
-              width: '1.7rem',
-            }}
-          >
-            {generateRowGroupName(i)}
-          </Text>
-
-          {Array.from({ length: 2 }, (_, index) => (
-            <Col key={index}>
-              <Box mode='creation' type='aisle' />
-            </Col>
-          ))}
-          {Array.from({ length: 30 }, (_, index) => (
-            <Col key={index}>
-              <Box
-                mode='creation'
-                type='seat'
-                onClick={() => console.log('Hello there')}
-                status='available'
-                seatNumber={`${index + 1}`}
-              />
-            </Col>
-          )).reverse()}
-        </Row>,
-      );
-    }
-    return rows;
-  };
+  const rowString =
+    '1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|2:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+13|';
+  const rowDetails = getRows(rowString)
+    .map((row) => hasRowStarted(row))
+    .filter((n) => n !== null)
+    .sort((e) => (e?.grpRowIndex !== undefined ? -e.grpRowIndex : 0));
   return (
-    <Row style={{ marginBottom: '1.25rem' }}>
-      <Text type='secondary' style={{ alignSelf: 'flex-start' }}>
-        Row A
-      </Text>
-      <Divider style={{ marginTop: '.625rem', marginBottom: '.3125rem' }} />
-      <Row justify='center' align='middle' style={{ padding: '0.5rem' }}>
-        <Col>
-          <SeatRow gapCount={2} maxSeats={30} grpName='B' grpIndex={30} rowIndex={12} />
-          {/* <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} />
-          <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} />
-          <SeatRow gapCount={2} maxSeats={30} grpName='B' rowHead='AA' rowIndex={31} /> */}
-        </Col>
-      </Row>
-    </Row>
+    <SeatRowHeader grpName='SOME GRP NAME'>
+      <SeatRow gapCount={2} maxSeats={30} rowHead='F' grpRowIndex={1} reverse />
+      <SeatRow gapCount={2} maxSeats={30} rowHead='H' grpRowIndex={2} reverse />
+    </SeatRowHeader>
   );
 }

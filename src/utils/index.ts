@@ -24,7 +24,7 @@ export const getIndexFromGrpName = (grpName: string) => {
 // '4D&AA99+16'
 // {STATUS_CODE}{GRP_CODE}{&}{ROW}{COL}+SEAT_NO
 export const extractSeatDetails = (seatString: string) => {
-  const regex = /^([0-9]+)([A-Z]+)&([A-Z]+)([0-9]+)\+([0-9]+)$/;
+  const regex = /^([0-9]+)([A-Z]+)&([A-Z]+)([0-9]+)\+([0-9]+)$/gm;
   const matches = seatString.matchAll(regex);
   const seatDetailsArray = [];
   for (const match of matches) {
@@ -39,9 +39,9 @@ export const extractSeatDetails = (seatString: string) => {
     seatNumber: seatDetailsArray[0][5],
   };
 };
-
+// 1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|
 export const hasRowStarted = (rowString: string) => {
-  const regex = /^([0-9]+:[A-Z]+:[A-Z]+000:)(.*)(\|$)/;
+  const regex = /^([0-9]+:[A-Z]+:[A-Z]+000:)(.*)/gm;
   const matches = rowString.matchAll(regex);
   const seatDetailsArray = [];
   for (const match of matches) {
@@ -70,7 +70,7 @@ export const getSeats = (seatsString: string) => {
 
 // ["1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|", ...]
 export const getRows = (rowsString: string) => {
-  return rowsString.split('|').map((row) => `${row}|`);
+  return rowsString.split('|');
 };
 
 export const getGroups = (layoutString: string) => {
@@ -109,7 +109,7 @@ export const getImmediateSeat = (row: string[], index: number, reverse = false) 
 };
 
 export const getSeatNumber = (seat: string) => seat.split('-seat')[0];
-// ---- 
+// ----
 export const modifyArr = <T>(row: T[], index: number, obj: T) => [
   ...row.slice(0, index),
   obj,
@@ -123,6 +123,9 @@ export const getUpdatedRow = (row: string[], index: number, reverse = false) => 
     updatedRow = updatedRow.reverse();
     index = updatedRow.length - (index + 1);
   }
+  console.log('Updated row', updatedRow);
+  console.log('Clicked index', index);
+
   const seatRegex = /^([0-9]+)(-seat)$/;
   const aisle = 'aisle';
   if (seatRegex.test(updatedRow[index])) {
@@ -132,6 +135,24 @@ export const getUpdatedRow = (row: string[], index: number, reverse = false) => 
       if (seatRegex.test(updatedRow[i])) {
         updatedRow = modifyArr(updatedRow, i, `${seat}-seat`);
         seat = seat + 1;
+      }
+    }
+  } else {
+    let nearestSeat = 0;
+    for (let i = index; i >= 0; i--) {
+      if (seatRegex.test(updatedRow[i])) {
+        nearestSeat = parseInt(updatedRow[i].split('-seat')[0], 10);
+        break;
+      }
+    }
+    nearestSeat = nearestSeat + 1;
+    updatedRow = modifyArr(updatedRow, index, `${nearestSeat}-seat`);
+
+    // It's an aisle(empty space)
+    for (let i = index + 1; i < updatedRow.length; i++) {
+      if (seatRegex.test(updatedRow[i])) {
+        nearestSeat = nearestSeat + 1;
+        updatedRow = modifyArr(updatedRow, i, `${nearestSeat}-seat`);
       }
     }
   }
