@@ -7,6 +7,7 @@ import {
   getSeatNumber,
   getUpdatedRow,
   hasRowStarted,
+  isAisle,
 } from '../utils';
 
 type BoxType = 'aisle' | 'seat';
@@ -16,8 +17,7 @@ export const SeatStatusCode = {
   available: 1,
   selected: 2,
 } as const;
-type SeatStatus = keyof typeof SeatStatusCode;
-
+export type SeatStatus = keyof typeof SeatStatusCode;
 interface IExtensibleBoxProps<T extends BoxType> {
   type: T;
   mode: LayoutModes;
@@ -173,35 +173,39 @@ const SeatRowHeader: React.FC<PropsWithChildren<ISeatRowHeaderProps>> = ({ grpNa
 
 const SeatRow = ({
   rowHead,
-  maxSeats,
-  grpRowIndex,
+  grpCode,
   gapCount = 2,
   reverse = false,
 }: {
   rowHead: string;
-  maxSeats: number;
-  grpRowIndex: number;
+  grpCode: string;
   gapCount?: number;
   reverse?: boolean;
 }) => {
-  const seatsNumber = Math.floor(maxSeats);
   const { Text } = Typography;
-  let seatsArray = Array(seatsNumber)
-    .fill('seat')
-    .map((v, i) => `${i + 1}-${v}`);
+  const seatsArray =
+    '4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+14:4D&F16+13:4D&F15+12:BB0+0:BB0+0:4D&F12+11'.split(
+      ':',
+    );
 
-  const initialAisleGap = Array(Math.floor(gapCount)).fill('aisle');
-  if (reverse) {
-    seatsArray = seatsArray.reverse();
-  }
+  const initialAisleGap = Array(Math.floor(gapCount)).fill('BB0+0');
   const initialRowArray = [...initialAisleGap, ...seatsArray];
   const [row, setRow] = useState<string[]>(initialRowArray);
-  const shiftAndUpdateRows = (index: number) => {
-    const shiftedRows = getUpdatedRow([...row.slice(gapCount)], index - gapCount, reverse);
+  const shiftAndUpdateRows = (
+    index: number,
+    grp: string = grpCode,
+    reverse_order: boolean = reverse,
+  ) => {
+    const shiftedRows = getUpdatedRow(
+      [...row.slice(gapCount)],
+      index - gapCount,
+      grp,
+      rowHead,
+      reverse_order,
+    );
     setRow([...initialAisleGap, ...shiftedRows]);
   };
-  const rowString = 'BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15'.split(':');
-  console.log('Row string --> ', rowString);
+
   return (
     <Row gutter={[9, 0]} align='middle' style={{ marginTop: '0.5rem' }}>
       <Text
@@ -216,14 +220,16 @@ const SeatRow = ({
         {rowHead}
       </Text>
       {row.map((e, index) => {
-        if (e === 'aisle') {
+        if (isAisle(e)) {
           return (
             <>
               <Col>
                 <Box
                   mode='creation'
                   type='aisle'
-                  onClick={() => (index >= gapCount ? shiftAndUpdateRows(index) : null)}
+                  onClick={() =>
+                    index >= gapCount ? shiftAndUpdateRows(index, 'BB', reverse) : null
+                  }
                 />
               </Col>
               {index + 1 === gapCount ? (
@@ -239,7 +245,7 @@ const SeatRow = ({
               <Box
                 mode='creation'
                 type='seat'
-                onClick={() => shiftAndUpdateRows(index)}
+                onClick={() => shiftAndUpdateRows(index, 'BB', reverse)}
                 status='available'
                 seatNumber={`${getSeatNumber(row[index])}`}
               />
@@ -253,15 +259,15 @@ const SeatRow = ({
 
 export default function Layout({ fromIndex, toIndex }: IProps) {
   const rowString =
-    '1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|2:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+13|';
+    '1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+14:4D&F16+13:4D&F15+12:BB0+0:BB0+0:4D&F12+11|2:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+13|';
   const rowDetails = getRows(rowString)
     .map((row) => hasRowStarted(row))
     .filter((n) => n !== null)
     .sort((e) => (e?.grpRowIndex !== undefined ? -e.grpRowIndex : 0));
   return (
     <SeatRowHeader grpName='SOME GRP NAME'>
-      <SeatRow gapCount={2} maxSeats={30} rowHead='F' grpRowIndex={1} reverse />
-      <SeatRow gapCount={2} maxSeats={30} rowHead='H' grpRowIndex={2} reverse />
+      <SeatRow gapCount={2} rowHead='F' grpCode='BB' reverse key='F' />
+      <SeatRow gapCount={2} rowHead='H' grpCode='BB' reverse key='H' />
     </SeatRowHeader>
   );
 }
