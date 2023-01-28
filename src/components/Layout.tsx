@@ -2,7 +2,6 @@ import { Col, Divider, Row, Typography } from 'antd';
 import React, { PropsWithChildren, useState } from 'react';
 import {
   generateRowGroupName,
-  getImmediateSeat,
   getRows,
   getSeatNumber,
   getUpdatedRow,

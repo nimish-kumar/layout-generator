@@ -96,30 +96,13 @@ export const seatGenerator = (
 };
 
 export const aisleGenerator = (grpCode: string) => `${grpCode}0+0`;
-
-// ----
-export const getCreationModeSeatNumber = (seat: string) => seat.split('-seat')[0];
-export const getImmediateSeat = (row: string[], index: number, reverse = false) => {
-  const regex = /^([0-9]+)(-seat)$/;
-  if (reverse) {
-    for (let i = index; i <= row.length - 1; i++) {
-      if (regex.test(row[i])) {
-        return parseInt(row[i].split('-seat')[0], 10);
-      }
-    }
-  } else {
-    for (let i = index; i >= 0; i--) {
-      if (regex.test(row[i])) {
-        console.log('--->', row[i]);
-        return parseInt(row[i].split('-seat')[0], 10);
-      }
-    }
+export const getSeatNumber = (seat: string) => {
+  try {
+    return seat.split('+')[1];
+  } catch (err) {
+    throw `Exception: Not a valid seat number - ${seat}`;
   }
-  return -1;
 };
-
-export const getSeatNumber = (seat: string) => seat.split('+')[1];
-// ----
 export const modifyArr = <T>(row: T[], index: number, obj: T) => [
   ...row.slice(0, index),
   obj,
