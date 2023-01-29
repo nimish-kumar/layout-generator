@@ -10,7 +10,7 @@ function App() {
     <div className='App'>
       <LayoutGenerator />
       <Row justify='center'>
-          <Layout fromIndex={10} toIndex={5} />
+          <Layout />
       </Row>
     </div>
   );

@@ -1,12 +1,14 @@
 import { Col, Divider, Row, Typography } from 'antd';
 import React, { PropsWithChildren, useState } from 'react';
 import {
-  generateRowGroupName,
-  getRows,
+  IGrpDetails,
+  IRowDetails,
+  extractGroupsDetails,
   getSeatNumber,
   getUpdatedRow,
   hasRowStarted,
   isAisle,
+  split,
 } from '../utils';
 
 type BoxType = 'aisle' | 'seat';
@@ -148,45 +150,42 @@ const Box = (props: BoxProps) => {
   );
 };
 
-interface IProps {
-  fromIndex: number;
-  toIndex: number;
-}
 interface ISeatRowHeaderProps {
   grpName: string;
+  cost: number;
 }
-const SeatRowHeader: React.FC<PropsWithChildren<ISeatRowHeaderProps>> = ({ grpName, children }) => {
+const SeatRowHeader: React.FC<PropsWithChildren<ISeatRowHeaderProps>> = ({
+  grpName,
+  cost,
+  children,
+}) => {
   const { Text } = Typography;
   return (
-    <Row>
-      <Col>
-        <Row justify='start'>
-          <Text type='secondary'>{grpName}</Text>
-          <Divider style={{ margin: '0.5rem 0' }} />
-        </Row>
-        {children}
-      </Col>
-    </Row>
+    <Col span={24}>
+      <Row justify='start'>
+        <Text type='secondary'>{`${grpName} - Rs. ${cost}`}</Text>
+        <Divider style={{ margin: '0.5rem 0' }} />
+      </Row>
+      {children}
+    </Col>
   );
 };
 
 const SeatRow = ({
   rowHead,
   grpCode,
+  rowString,
   gapCount = 2,
   reverse = false,
 }: {
   rowHead: string;
   grpCode: string;
+  rowString: string;
   gapCount?: number;
   reverse?: boolean;
 }) => {
   const { Text } = Typography;
-  const seatsArray =
-    '4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+14:4D&F16+13:4D&F15+12:BB0+0:BB0+0:4D&F12+11'.split(
-      ':',
-    );
-
+  const seatsArray = [...rowString.split(':').slice(gapCount)];
   const initialAisleGap = Array(Math.floor(gapCount)).fill('BB0+0');
   const initialRowArray = [...initialAisleGap, ...seatsArray];
   const [row, setRow] = useState<string[]>(initialRowArray);
@@ -213,7 +212,6 @@ const SeatRow = ({
           fontSize: '0.8rem',
           height: '1.7rem',
           width: '3rem',
-          marginRight: '1rem',
         }}
       >
         {rowHead}
@@ -221,7 +219,10 @@ const SeatRow = ({
       {row.map((e, index) => {
         if (isAisle(e)) {
           return (
-            <>
+            <div
+              style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}
+              key={index}
+            >
               <Col>
                 <Box
                   mode='creation'
@@ -236,7 +237,7 @@ const SeatRow = ({
                   <Divider style={{ border: '0.025px solid grey' }} type='vertical' />
                 </Col>
               ) : null}
-            </>
+            </div>
           );
         } else {
           return (
@@ -256,17 +257,44 @@ const SeatRow = ({
   );
 };
 
-export default function Layout({ fromIndex, toIndex }: IProps) {
-  const rowString =
-    '1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+14:4D&F16+13:4D&F15+12:BB0+0:BB0+0:4D&F12+11|2:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+13|';
-  const rowDetails = getRows(rowString)
+export default function Layout() {
+  const seatingPattern = `PREMIUM:BB:400:INR:1:N|NORMAL:B:500:INR:2:N||1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+14:4D&F16+13:4D&F15+12:BB0+0:BB0+0:4D&F12+11|1:E:B000:B0+0:B0+0:4D&F16+15:4D&F15+14:B0+0:B0+0:4D&F12+13|`;
+  const [grps, rows] = seatingPattern.split('||');
+  const rowsArray = split(rows)
     .map((row) => hasRowStarted(row))
-    .filter((n) => n !== null)
-    .sort((e) => (e?.grpRowIndex !== undefined ? -e.grpRowIndex : 0));
+    .sort((a, b) => (a?.grpRowIndex ?? 0) - (b?.grpRowIndex ?? 0))
+    .filter((n) => !!n) as Array<IRowDetails>;
+  const grpsArray = split(grps)
+    .map((grp) => extractGroupsDetails(grp))
+    .sort((a, b) => (a?.grpOrder ?? 0) - (b?.grpOrder ?? 0))
+    .filter((x) => !!x) as Array<IGrpDetails>;
+
+  const updatedGrpsWithRows = grpsArray.map((g) => {
+    const grpCode = g.grpCode;
+    const rows = rowsArray.filter((r) => r.seatGrpCode === grpCode);
+    g['rows'] = [...rows];
+    return g;
+  });
   return (
-    <SeatRowHeader grpName='SOME GRP NAME'>
-      <SeatRow gapCount={2} rowHead='F' grpCode='BB' reverse key='F' />
-      <SeatRow gapCount={2} rowHead='H' grpCode='BB' reverse key='H' />
-    </SeatRowHeader>
+    <Row gutter={[9, 9]}>
+      {updatedGrpsWithRows.map((grp, index) => {
+        const rows = grp.rows;
+        return (
+          <SeatRowHeader grpName={grp.grpName} cost={grp.cost} key={index}>
+            {rows.map((row, index) => {
+              return (
+                <SeatRow
+                  rowHead={row.rowHead}
+                  grpCode={row.seatGrpCode}
+                  rowString={row.seatsString}
+                  reverse
+                  key={index}
+                />
+              );
+            })}
+          </SeatRowHeader>
+        );
+      })}
+    </Row>
   );
 }
