@@ -129,8 +129,6 @@ export const getUpdatedRow = (
     updatedRow = updatedRow.reverse();
     index = updatedRow.length - (index + 1);
   }
-  console.log('Incoming row', updatedRow);
-  console.log('Clicked index', index);
 
   const aisle = aisleGenerator(grpCode);
   const selectedSeat = isSeat(updatedRow[index]);
@@ -165,7 +163,6 @@ export const getUpdatedRow = (
   if (reverse) {
     updatedRow = [...updatedRow].reverse();
   }
-  console.log('Updated row', updatedRow);
   return updatedRow;
 };
 
