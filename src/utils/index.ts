@@ -1,24 +1,24 @@
 import { SeatStatus, SeatStatusCode } from '../components/Layout';
 
-export const generateRowGroupName = (code: number): string => {
-  let grpName = '';
-  if (code == 0) {
+export const convertNumberToCode = (codeNumber: number): string => {
+  let codeString = '';
+  if (codeNumber == 0) {
     return 'A';
   }
-  while (code > 0) {
+  while (codeNumber > 0) {
     let r = 0;
-    r = code % 26;
-    grpName = grpName + String.fromCharCode(r + 65);
-    code = (code / 26) >> 0;
+    r = codeNumber % 26;
+    codeString = codeString + String.fromCharCode(r + 65);
+    codeNumber = (codeNumber / 26) >> 0;
   }
-  return grpName.split('').reverse().join('');
+  return codeString.split('').reverse().join('');
 };
-export const getIndexFromGrpName = (grpName: string) => {
-  const reverseGrpName = grpName.split('').reverse().join('');
-  const l = reverseGrpName.length;
+export const convertCodeToNumber = (codeString: string) => {
+  const reverseCodeString = codeString.split('').reverse().join('');
+  const l = reverseCodeString.length;
   let sum = 0;
   for (let i = 0; i < l; i++) {
-    sum = sum + (reverseGrpName.charCodeAt(i) - 65) * Math.pow(26, i);
+    sum = sum + (reverseCodeString.charCodeAt(i) - 65) * Math.pow(26, i);
   }
   return sum;
 };
@@ -45,8 +45,15 @@ export const isSeat = (seatString: string) => {
     return null;
   }
 };
+export interface IRowDetails {
+  inputString: string;
+  grpRowIndex: number;
+  rowHead: string;
+  seatGrpCode: string;
+  seatsString: string;
+}
 // 1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|
-export const hasRowStarted = (rowString: string) => {
+export const hasRowStarted = (rowString: string): IRowDetails | null => {
   const regex = /^([0-9]+:[A-Z]+:[A-Z]+000:)(.*)/gm;
   const matches = rowString.matchAll(regex);
   const seatDetailsArray = [];
@@ -76,8 +83,8 @@ export const getSeats = (seatsString: string) => {
 };
 
 // ["1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|", ...]
-export const getRows = (rowsString: string) => {
-  return rowsString.split('|');
+export const split = (infoString: string) => {
+  return infoString.split('|');
 };
 
 export const getGroups = (layoutString: string) => {
@@ -160,4 +167,34 @@ export const getUpdatedRow = (
   }
   console.log('Updated row', updatedRow);
   return updatedRow;
+};
+
+export interface IGrpDetails {
+  inputGroupString: string;
+  grpName: string;
+  grpCode: string;
+  cost: number;
+  grpOrder: number;
+  currency: string;
+  rows: IRowDetails[];
+}
+
+export const extractGroupsDetails = (grpDeatilsString: string): IGrpDetails | null => {
+  const grpRegex = /^([A-Z ]+[A-Z]+):([A-Z]+):([\d]+):INR:([\d]+):N$/gm;
+  const grpDetails = [];
+  for (const match of grpDeatilsString.matchAll(grpRegex)) {
+    grpDetails.push(match);
+  }
+  if (grpDetails.length > 0) {
+    return {
+      inputGroupString: grpDetails[0][0],
+      grpName: grpDetails[0][1],
+      grpCode: grpDetails[0][2],
+      cost: parseInt(grpDetails[0][3], 10),
+      grpOrder: parseInt(grpDetails[0][4], 10),
+      currency: 'INR',
+      rows: [],
+    };
+  }
+  return null;
 };
