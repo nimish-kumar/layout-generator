@@ -3,7 +3,7 @@ import './App.css';
 import 'antd/dist/reset.css';
 import LayoutGenerator from './components/LayoutGeneratorForm';
 import Layout from './components/Layout';
-import { Col, Row } from 'antd';
+import { Row } from 'antd';
 
 function App() {
   return (
