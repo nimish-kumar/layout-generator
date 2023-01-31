@@ -1,4 +1,5 @@
 import { SeatStatus, SeatStatusCode } from '../components/Layout';
+import { ISeatGroupsData } from '../components/LayoutGeneratorForm';
 
 export const convertNumberToCode = (codeNumber: number): string => {
   let codeString = '';
@@ -52,7 +53,7 @@ export interface IRowDetails {
   seatGrpCode: string;
   seatsString: string;
 }
-// 1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|
+// 1:F:D000:D0+0:D0+0:4D&F16+16:4D&F15+15:D0+0:D0+0:4D&F12+15|
 export const hasRowStarted = (rowString: string): IRowDetails | null => {
   const regex = /^([0-9]+:[A-Z]+:[A-Z]+000:)(.*)/gm;
   const matches = rowString.matchAll(regex);
@@ -103,6 +104,30 @@ export const seatGenerator = (
 };
 
 export const aisleGenerator = (grpCode: string) => `${grpCode}0+0`;
+export const grpGenerator = (
+  grpName: string,
+  grpCode: string,
+  cost: number,
+  order: number,
+  currency = 'INR',
+) => `${grpName}:${grpCode}:${cost}:${currency}:${order}:N`;
+export const rowGenerator = (
+  grpRowIndex: number,
+  rowHead: string,
+  seatGrpCode: string,
+  maxSeatCount: number,
+  gapCount = 2,
+) => {
+  const seats = [];
+  for (let i = 0; i < maxSeatCount; i++) {
+    seats.push(seatGenerator(seatGrpCode, rowHead, i + 1, maxSeatCount - i));
+  }
+  console.log('Seats --->', seats);
+  const seatsRow = `${seats.join(':')}`;
+  const aisleString = Array.from({ length: gapCount }, () => aisleGenerator(seatGrpCode)).join(':');
+  return `${grpRowIndex}:${rowHead}:${seatGrpCode}000:${aisleString}:${seatsRow}`;
+};
+
 export const getSeatNumber = (seat: string) => {
   try {
     return seat.split('+')[1];
@@ -194,4 +219,30 @@ export const extractGroupsDetails = (grpDeatilsString: string): IGrpDetails | nu
     };
   }
   return null;
+};
+
+export const generateLayout = (layoutData: ISeatGroupsData) => {
+  const grps = [];
+  const rows = [];
+  const totalRows = layoutData.groups.reduce((total, grp) => total + grp.row_count, 0);
+  console.log('Total row count', totalRows);
+  let count = 0;
+  for (let i = 0; i < layoutData.groups.length; i++) {
+    const activeGrp = layoutData.groups[i];
+    grps.push(
+      grpGenerator(activeGrp.group_name, convertNumberToCode(i), activeGrp.group_cost, i + 1),
+    );
+    for (let j = 0; j < activeGrp.row_count; j++) {
+      rows.push(
+        rowGenerator(
+          j + 1,
+          convertNumberToCode(totalRows - count - 1),
+          convertNumberToCode(i),
+          activeGrp.col_count,
+        ),
+      );
+      count = count + 1;
+    }
+  }
+  return `${grps.join('|')}||${rows.join('|')}`;
 };

@@ -1,9 +1,13 @@
-import { Button, Col, Form, Input, InputNumber, Row, Space, Typography } from 'antd';
+import { Button, Col, Form, Input, InputNumber, Row, Space, Tooltip, Typography } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import React from 'react';
+import { generateLayout } from '../utils';
 
 export interface IGrpData {
-  rowGrp: number;
+  col_count: number;
+  group_cost: number;
+  group_name: string;
+  row_count: number;
 }
 export interface ISeatGroupsData {
   groups: IGrpData[];
@@ -12,12 +16,12 @@ export interface ISeatGroupsData {
 export default function LayoutGeneratorForm() {
   const { Title } = Typography;
   const [form] = Form.useForm();
-  const initialFormValue = {
+  const initialFormValue: ISeatGroupsData = {
     groups: [],
   };
- 
-  const submitBtnHandler = (values: any) => {
-    console.log('values :>> ', values);
+
+  const submitBtnHandler = (values: ISeatGroupsData) => {
+    console.log('values :>> ', generateLayout(values));
   };
 
   return (
@@ -68,18 +72,20 @@ export default function LayoutGeneratorForm() {
                             name={[name, 'col_count']}
                             label={`Col count`}
                             {...restFields}
-                            initialValue={10}
+                            initialValue={30}
                             rules={[{ required: true, message: 'Enter column count' }]}
                           >
                             <InputNumber />
                           </Form.Item>
-                          <MinusCircleOutlined
-                            onClick={() => {
-                              remove(name);
-                            }}
-                            disabled={false}
-                            style={{ verticalAlign: 'middle' }}
-                          />
+                          <Tooltip placement='right' title='Remove row'>
+                            <MinusCircleOutlined
+                              onClick={() => {
+                                remove(name);
+                              }}
+                              disabled={false}
+                              style={{ verticalAlign: 'middle' }}
+                            />
+                          </Tooltip>
                         </Space>
                       </Col>
                     </Row>

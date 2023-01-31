@@ -9,8 +9,8 @@ function App() {
   return (
     <div className='App'>
       <LayoutGenerator />
-      <Row justify='center'>
-          <Layout />
+      <Row>
+        <Layout />
       </Row>
     </div>
   );
