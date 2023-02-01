@@ -13,22 +13,29 @@ export interface ISeatGroupsData {
   groups: IGrpData[];
 }
 
-export default function LayoutGeneratorForm() {
-  const { Title } = Typography;
+interface ILayoutGeneratorProps {
+  setLayout: React.Dispatch<React.SetStateAction<string>>;
+  nextStep: () => void;
+}
+export default function LayoutGeneratorForm({ setLayout, nextStep }: ILayoutGeneratorProps) {
   const [form] = Form.useForm();
   const initialFormValue: ISeatGroupsData = {
     groups: [],
   };
 
   const submitBtnHandler = (values: ISeatGroupsData) => {
-    console.log('values :>> ', generateLayout(values));
+    values.groups = [
+      ...values.groups.map((grp) => ({
+        ...grp,
+        group_name: grp.group_name.toUpperCase(),
+      })),
+    ];
+    setLayout(generateLayout(values));
+    nextStep();
   };
 
   return (
     <Row justify='center'>
-      <Col span={24}>
-        <Title level={3}>Layout generator form</Title>
-      </Col>
       <Col>
         <Form
           name='layout-generator'
