@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import 'antd/dist/reset.css';
 import LayoutGenerator from './components/LayoutGeneratorForm';
@@ -19,6 +19,7 @@ function App() {
       content: <LayoutGenerator setLayout={setLayout} nextStep={nextStep} />,
     },
     { title: 'Design layout', content: <Layout layout={layout} setLayout={setLayout} /> },
+    // {title: 'Generated layout': content: <Layout layout={layout} />}
   ];
   return (
     <div className='App'>

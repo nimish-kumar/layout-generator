@@ -104,6 +104,14 @@ export const seatGenerator = (
 };
 
 export const aisleGenerator = (grpCode: string) => `${grpCode}0+0`;
+export const prependSeatRow = (
+  grpIndex: number,
+  rowHead: string,
+  grpCode: string,
+  gapCount: number,
+  seatRow: string,
+) => `${grpIndex}:${rowHead}:${grpCode}000:${`${aisleGenerator(grpCode)}:`.repeat(gapCount)}${seatRow}`;
+
 export const grpGenerator = (
   grpName: string,
   grpCode: string,
@@ -135,7 +143,7 @@ export const getSeatNumber = (seat: string) => {
     throw `Exception: Not a valid seat number - ${seat}`;
   }
 };
-export const modifyArr = <T>(row: T[], index: number, obj: T) => [
+export const immutableInsertArray = <T>(row: T[], index: number, obj: T) => [
   ...row.slice(0, index),
   obj,
   ...row.slice(index + 1),
@@ -159,10 +167,10 @@ export const getUpdatedRow = (
   const selectedSeat = isSeat(updatedRow[index]);
   if (selectedSeat) {
     let seat = selectedSeat?.seatNumber ?? -1;
-    updatedRow = modifyArr(updatedRow, index, aisle);
+    updatedRow = immutableInsertArray(updatedRow, index, aisle);
     for (let i = index + 1; i < updatedRow.length; i++) {
       if (isSeat(updatedRow[i])) {
-        updatedRow = modifyArr(updatedRow, i, seatGenerator(grpCode, rowHead, i, seat));
+        updatedRow = immutableInsertArray(updatedRow, i, seatGenerator(grpCode, rowHead, i, seat));
         seat = seat + 1;
       }
     }
@@ -175,13 +183,13 @@ export const getUpdatedRow = (
       }
     }
     nearestSeat = nearestSeat + 1;
-    updatedRow = modifyArr(updatedRow, index, seatGenerator(grpCode, rowHead, index, nearestSeat));
+    updatedRow = immutableInsertArray(updatedRow, index, seatGenerator(grpCode, rowHead, index, nearestSeat));
 
     // It's an aisle(empty space)
     for (let i = index + 1; i < updatedRow.length; i++) {
       if (isSeat(updatedRow[i])) {
         nearestSeat = nearestSeat + 1;
-        updatedRow = modifyArr(updatedRow, i, seatGenerator(grpCode, rowHead, i, nearestSeat));
+        updatedRow = immutableInsertArray(updatedRow, i, seatGenerator(grpCode, rowHead, i, nearestSeat));
       }
     }
   }

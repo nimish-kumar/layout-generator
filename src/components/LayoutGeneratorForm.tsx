@@ -1,4 +1,4 @@
-import { Button, Col, Form, Input, InputNumber, Row, Space, Tooltip, Typography } from 'antd';
+import { Button, Col, Form, Input, InputNumber, Row, Space, Tooltip } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import React from 'react';
 import { generateLayout } from '../utils';
