@@ -17,7 +17,7 @@ interface ILayoutGeneratorProps {
   setLayout: React.Dispatch<React.SetStateAction<string>>;
   nextStep: () => void;
 }
-export default function LayoutGeneratorForm({ setLayout, nextStep }: ILayoutGeneratorProps) {
+const LayoutGeneratorForm = ({ setLayout, nextStep }: ILayoutGeneratorProps) => {
   const [form] = Form.useForm();
   const initialFormValue: ISeatGroupsData = {
     groups: [],
@@ -122,4 +122,6 @@ export default function LayoutGeneratorForm({ setLayout, nextStep }: ILayoutGene
       </Col>
     </Row>
   );
-}
+};
+
+export default LayoutGeneratorForm;

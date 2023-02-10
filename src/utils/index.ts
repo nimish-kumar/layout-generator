@@ -1,5 +1,11 @@
-import { SeatStatus, SeatStatusCode } from '../components/Layout';
+import { LayoutModes } from '../components/SeatRow';
+import { SeatStatus, SeatStatusCode } from '../components/SeatRow';
 import { ISeatGroupsData } from '../components/LayoutGeneratorForm';
+
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+};
+
 
 export const convertNumberToCode = (codeNumber: number): string => {
   let codeString = '';
@@ -26,7 +32,7 @@ export const convertCodeToNumber = (codeString: string) => {
 
 // '4D&AA99+16'
 // {STATUS_CODE}{GRP_CODE}{&}{ROW}{COL}+SEAT_NO
-export const isSeat = (seatString: string) => {
+export const getSeatDetails = (seatString: string) => {
   const regex = /^([0-9]+)([A-Z]+)&([A-Z]+)([0-9]+)\+([0-9]+)$/gm;
   const matches = seatString.matchAll(regex);
   const seatDetailsArray = [];
@@ -110,7 +116,10 @@ export const prependSeatRow = (
   grpCode: string,
   gapCount: number,
   seatRow: string,
-) => `${grpIndex}:${rowHead}:${grpCode}000:${`${aisleGenerator(grpCode)}:`.repeat(gapCount)}${seatRow}`;
+) =>
+  `${grpIndex}:${rowHead}:${grpCode}000:${`${aisleGenerator(grpCode)}:`.repeat(
+    gapCount,
+  )}${seatRow}`;
 
 export const grpGenerator = (
   grpName: string,
@@ -130,7 +139,6 @@ export const rowGenerator = (
   for (let i = 0; i < maxSeatCount; i++) {
     seats.push(seatGenerator(seatGrpCode, rowHead, i + 1, maxSeatCount - i));
   }
-  console.log('Seats --->', seats);
   const seatsRow = `${seats.join(':')}`;
   const aisleString = Array.from({ length: gapCount }, () => aisleGenerator(seatGrpCode)).join(':');
   return `${grpRowIndex}:${rowHead}:${seatGrpCode}000:${aisleString}:${seatsRow}`;
@@ -154,6 +162,7 @@ export const getUpdatedRow = (
   index: number,
   grpCode: string,
   rowHead: string,
+  layoutMode: LayoutModes,
   reverse = false,
 ) => {
   let updatedRow: string[] = [...row];
@@ -164,38 +173,73 @@ export const getUpdatedRow = (
   }
 
   const aisle = aisleGenerator(grpCode);
-  const selectedSeat = isSeat(updatedRow[index]);
+  const selectedSeat = getSeatDetails(updatedRow[index]);
   if (selectedSeat) {
     let seat = selectedSeat?.seatNumber ?? -1;
-    updatedRow = immutableInsertArray(updatedRow, index, aisle);
-    for (let i = index + 1; i < updatedRow.length; i++) {
-      if (isSeat(updatedRow[i])) {
-        updatedRow = immutableInsertArray(updatedRow, i, seatGenerator(grpCode, rowHead, i, seat));
-        seat = seat + 1;
+    if (layoutMode === 'creation') {
+      updatedRow = immutableInsertArray(updatedRow, index, aisle);
+      for (let i = index + 1; i < updatedRow.length; i++) {
+        if (getSeatDetails(updatedRow[i])) {
+          updatedRow = immutableInsertArray(
+            updatedRow,
+            i,
+            seatGenerator(grpCode, rowHead, i, seat),
+          );
+          seat = seat + 1;
+        }
       }
+    } else {
+      let updatedSeat = '';
+      if (parseInt(selectedSeat.seatStatusCode, 10) === SeatStatusCode['available']) {
+        updatedSeat = seatGenerator(
+          selectedSeat.seatGrpCode,
+          selectedSeat.seatRow,
+          selectedSeat.seatCol,
+          selectedSeat.seatNumber,
+          'selected',
+        );
+      } else {
+        updatedSeat = seatGenerator(
+          selectedSeat.seatGrpCode,
+          selectedSeat.seatRow,
+          selectedSeat.seatCol,
+          selectedSeat.seatNumber,
+          'available',
+        );
+      }
+      updatedRow = immutableInsertArray(updatedRow, index, updatedSeat);
     }
   } else {
     let nearestSeat = 0;
     for (let i = index; i >= 0; i--) {
-      if (isSeat(updatedRow[i])) {
-        nearestSeat = isSeat(updatedRow[i])?.seatNumber ?? -1;
+      if (getSeatDetails(updatedRow[i])) {
+        nearestSeat = getSeatDetails(updatedRow[i])?.seatNumber ?? -1;
         break;
       }
     }
     nearestSeat = nearestSeat + 1;
-    updatedRow = immutableInsertArray(updatedRow, index, seatGenerator(grpCode, rowHead, index, nearestSeat));
+    updatedRow = immutableInsertArray(
+      updatedRow,
+      index,
+      seatGenerator(grpCode, rowHead, index, nearestSeat),
+    );
 
     // It's an aisle(empty space)
     for (let i = index + 1; i < updatedRow.length; i++) {
-      if (isSeat(updatedRow[i])) {
+      if (getSeatDetails(updatedRow[i])) {
         nearestSeat = nearestSeat + 1;
-        updatedRow = immutableInsertArray(updatedRow, i, seatGenerator(grpCode, rowHead, i, nearestSeat));
+        updatedRow = immutableInsertArray(
+          updatedRow,
+          i,
+          seatGenerator(grpCode, rowHead, i, nearestSeat),
+        );
       }
     }
   }
   if (reverse) {
     updatedRow = [...updatedRow].reverse();
   }
+
   return updatedRow;
 };
 
@@ -210,7 +254,7 @@ export interface IGrpDetails {
 }
 
 export const extractGroupsDetails = (grpDeatilsString: string): IGrpDetails | null => {
-  const grpRegex = /^([A-Z ]+[A-Z]+):([A-Z]+):([\d]+):INR:([\d]+):N$/gm;
+  const grpRegex = /^([A-Z]+):([A-Z]+):([\d]+):INR:([\d]+):N$/gm;
   const grpDetails = [];
   for (const match of grpDeatilsString.matchAll(grpRegex)) {
     grpDetails.push(match);
