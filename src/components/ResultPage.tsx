@@ -10,7 +10,7 @@ interface IResultPageProps {
 const ResultPage = ({ layout, gap }: IResultPageProps) => {
   const { Paragraph } = Typography;
   return (
-    <Row>
+    <Row justify='center'>
       <Paragraph copyable>{layout}</Paragraph>
       <SelectionLayout layout={layout} gap={gap} />
     </Row>
