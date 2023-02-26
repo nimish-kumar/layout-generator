@@ -89,12 +89,12 @@ export const getSeats = (seatsString: string) => {
   return seatsString.split(':');
 };
 
-// ["1:F:BB000:BB0+0:BB0+0:4D&F16+16:4D&F15+15:BB0+0:BB0+0:4D&F12+15|", ...]
+// ["1:F:D000:D0+0:D0+0:4D&F16+16:4D&F15+15:D0+0:D0+0:4D&F12+15|", ...]
 export const split = (infoString: string) => {
   return infoString.split('|');
 };
 
-export const getGroups = (layoutString: string) => {
+export const layoutSeperator = (layoutString: string) => {
   return layoutString.split('||');
 };
 
