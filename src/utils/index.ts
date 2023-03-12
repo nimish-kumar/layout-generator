@@ -89,7 +89,7 @@ export const getSeats = (seatsString: string) => {
   return seatsString.split(':');
 };
 
-// ["1:F:D000:D0+0:D0+0:4D&F16+16:4D&F15+15:D0+0:D0+0:4D&F12+15|", ...]
+// ["1:F:D000:D0+0:D0+0:4D&F16+16:4D&F15+15:D0+0:D0+0:4D&F12+15", ...]
 export const split = (infoString: string) => {
   return infoString.split('|');
 };
@@ -128,6 +128,7 @@ export const grpGenerator = (
   order: number,
   currency = 'INR',
 ) => `${grpName}:${grpCode}:${cost}:${currency}:${order}:N`;
+
 export const rowGenerator = (
   grpRowIndex: number,
   rowHead: string,
@@ -151,6 +152,7 @@ export const getSeatNumber = (seat: string) => {
     throw `Exception: Not a valid seat number - ${seat}`;
   }
 };
+
 export const immutableInsertArray = <T>(row: T[], index: number, obj: T) => [
   ...row.slice(0, index),
   obj,
