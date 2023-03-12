@@ -1,7 +1,7 @@
 import { Button, Col, Form, Input, InputNumber, Row, Space, Tooltip } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import React from 'react';
-import { generateLayout } from '../utils';
+import { generateLayout, groupNameRegex } from '../utils';
 
 export interface IGrpData {
   col_count: number;
@@ -55,7 +55,7 @@ const LayoutGeneratorForm = ({ setLayout, nextStep }: ILayoutGeneratorProps) => 
                           <Form.Item
                             name={[name, 'group_name']}
                             label='Group name'
-                            rules={[{ required: true, message: 'Enter group name' }]}
+                            rules={[{ required: true, message: 'Enter group name' }, {pattern: groupNameRegex, message: 'Enter valid group name'},]}
                           >
                             <Input />
                           </Form.Item>

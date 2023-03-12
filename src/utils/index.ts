@@ -6,6 +6,7 @@ export type Prettify<T> = {
   [K in keyof T]: T[K];
 };
 
+export const groupNameRegex = /^([A-Z]+)$/;
 
 export const convertNumberToCode = (codeNumber: number): string => {
   let codeString = '';

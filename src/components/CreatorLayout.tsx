@@ -55,6 +55,7 @@ const CreatorLayout = ({ layout, gap, setLayout, nextStep }: ICreatorLayoutProps
                 const seatsArray = [...row.seatsString.split(':').slice(gap)];
                 const initialAisleGap = Array(gap).fill(`${row.seatGrpCode}0+0`);
                 const initialRowArray = [...initialAisleGap, ...seatsArray];
+                // Shifts and updates rows if a seat is converted to aisle or vice versa
                 const shiftAndUpdateRows = (seatIndex: number, reverse_order = true) => {
                   const updatedRow = getUpdatedRow(
                     [...initialRowArray.slice(gap)],
