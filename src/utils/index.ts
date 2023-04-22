@@ -254,7 +254,7 @@ export interface IGrpDetails {
 }
 
 export const extractGroupsDetails = (grpDeatilsString: string): IGrpDetails | null => {
-  const grpRegex = /^([A-Z]+):([A-Z]+):([\d]+):INR:([\d]+):N$/gm;
+  const grpRegex = /^([A-Z]+[_]*[A-Z]+):([A-Z]+):([\d]+):INR:([\d]+):N$/gm;
   const grpDetails = [];
   for (const match of grpDeatilsString.matchAll(grpRegex)) {
     grpDetails.push(match);
