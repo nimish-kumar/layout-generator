@@ -27,7 +27,7 @@ const LayoutGeneratorForm = ({ setLayout, nextStep }: ILayoutGeneratorProps) => 
     values.groups = [
       ...values.groups.map((grp) => ({
         ...grp,
-        group_name: grp.group_name.toUpperCase(),
+        group_name: grp.group_name.toUpperCase().trimEnd(),
       })),
     ];
     setLayout(generateLayout(values));
